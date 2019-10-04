@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>Document</title>
+    <script src="d3.js"></script>
+</head>
+<body>
+    <div></div>
+    <svg id="container" height="250" width="350">
+        <g id="body" transform="translate(50,0)" ></g>
+        <g id="xaxis" >
+        </g>
+        <g id="yaxis"></g>
+    </svg>
+    <style>
+        svg{
+            border: solid 1px black
+        }
+    </style>
+</body>
+<script>
+    let container=d3.select("#body")
+    d3.csv("d.csv").then(showdata)
+    
+    function showdata(data)
+
+    {
+        let max=d3.max(data, d=>d.Weight)
+          let scale=d3.scaleLinear()
+                 .range([0,200])
+                 .domain([0,max])
+                
+
+        let oscale=d3.scaleBand()
+                   .range([0,200])
+                   .domain(data.map(d=>d.Name))
+                   .padding(.3)
+        container.selectAll("rect").data(data)
+        .enter().append("rect")
+        .attr("fill","blue")
+        .attr("width",d=>scale(d.Weight))
+        .attr("height",oscale.bandwidth())
+        .attr("y",d=>oscale(d.Name))
+
+        let xaxis=d3.axisBottom(scale).ticks(5).tickFormat(d=>d + "lb")
+        d3.select("#xaxis")
+        .attr("transform", "translate(50,200)")
+        .call(xaxis)
+        d3.select("#xaxis")
+        .append("text")
+        .text("Weight")
+        .attr("fill","black")
+        .attr("transform", "translate(100,40)")
+
+        
+
+        let yaxis=d3.axisLeft(oscale)
+        d3.select("#yaxis")
+        .attr("transform", "translate(50,0)")
+        .call(yaxis)
+    }
+    function write(text)
+    {
+        d3.select(".container").append("div").text(text)
+    }
+</script>
+</html>

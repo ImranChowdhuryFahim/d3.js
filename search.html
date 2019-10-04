@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>Document</title>
+</head>
+<body>
+    <p>Imran</p>
+        <svg style="border: solid 1px black">
+                <g >
+                <rect x=30 y=30 height=100 width=150 fill="green" />
+                <circle r=30 cy=80 cx=100 fill="red" />
+                </g>
+        </svg>
+    <div class="r"></div>
+    <button onclick="src()">Search</button>
+    <div class="hello"></div>
+</body>
+<script src="d3.js"></script>
+<script>
+    let i=1;
+    function src(){
+        
+    d3.json("SDBMS.json").then(function(data){
+        let r=prompt('Id')
+        write("Result No: "+i)
+        write("Name: "+data[r][3]);
+        write("ID: "+data[r][1]);
+        write("Merit Positon: "+data[r][0]);
+        write("Admission Roll: "+data[r][2]);
+        i=i+1;
+    })}
+   function write(text)
+   {
+       d3.select(".hello").append("div").text(text);
+   }
+   
+   </script>
+</html>

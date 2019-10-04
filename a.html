@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>Document</title>
+</head>
+<body>
+    <style>
+        .line{
+            fill:none;
+            stroke:blue;
+        }
+    </style>
+    <div class="he"></div>
+    <svg id="container" height="300" width="500">
+        <g id="body" transform="translate(50,50)"></g>
+
+    </svg>
+</body>
+<script src="d3.js"></script>
+<script>
+    let data=d3.csv("d.csv").then(showdata)
+    function showdata(data){
+    let bodyheight=200
+    let bodywidth=400   
+    let body=d3.select("#body")
+    let maxvalue=d3.max(data,d=> d.Height)
+    let yScale=d3.scaleLinear().range([bodyheight,0]).domain([0,maxvalue]);
+    body.append("g").call(d3.axisLeft(yScale))
+    let xScale=d3.scaleLinear().domain(d3.extent(data,c=>c.Weight)).range([0,d3.max(data,c=>c.Weight)])
+    d3.select("#body").append("g").attr("transform", "translate(0," + bodyheight + ")").call(d3.axisBottom(xScale))
+    valueline=d3.line().x(d=>xScale(d.Weight)).y(d=>yScale(d.Height))
+    body.append("path").datum(data).attr("d",valueline).attr("class","line")
+    }
+    
+
+
+</script>
+</html>
