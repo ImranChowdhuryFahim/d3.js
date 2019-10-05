@@ -8,40 +8,136 @@
     <script src="d3.js"></script>
 </head>
 <body>
-    <svg id="body" height="800" width="500" style="border: 1px solid black"></svg>
+        Name: <input type="text" id="t">
+        Weight: <input type="number" id="g">
+        Height: <input type="number" id="f">
+    <button onclick="update()">update</button>
+     <button onclick="g()">showbar</button>
+     <button onclick="h()">showpie</button>
+    <svg id="body" height="500" width="500" style="border: 1px solid black"></svg>
+    
 </body>
 <script>
     let body=d3.select("#body")
-    d3.csv("d.csv").then(showdata)
+    data=[
+        {
+            Name:'Matin',
+            Weight:196,
+            Height:70
+        },
+        {
+            Name:'Tahsin',
+            Weight:186,
+            Height:80
+        },
+        {
+            Name:'Zahid',
+            Weight:200,
+            Height:65
+        },
+        {
+            Name:'Talha',
+            Weight:150,
+            Height:75
+        }
+    ]
+    
+    // data=d3.csv("d.csv").then(function(d){
+    //     data=d
+    //     console.log(data)
+    //     return data
+        
+    // })
+    function h()
+    {
+        document.getElementById('body').innerHTML=" "
+        showdata1(data)
+    }
+    
+    function g()
+    {
+        document.getElementById('body').innerHTML=" "
+        showdata(data)
+    }
+    function update()
+    {
+        let name=document.getElementById('t').value
+        let weight=document.getElementById('g').value
+        let height=document.getElementById('f').value
+        data.push({
+            Name:name,
+            Weight:weight,
+            Height:height
+        })
+    }
     function showdata(data)
     {
-        let scale= d3.scaleLinear()
-                    .range([0,500])
+       let data1=data
+        
+       let scale= d3.scaleLinear()
+                    .range([0,300])
                     .domain([0,d3.max(data,d=>d.Height)])
         let scale1=d3.scaleBand()
                      .range([0,200])
-                     .domain(data.map(d=>d.Name))
+                     .domain(data1.map(d=>d.Name))
                      .padding(.3)
 
-        let join=body.selectAll("rect").data(data)
+        let join=body.selectAll("rect").data(data1)
         join.enter()
         .append("rect")
-        .attr("height",d=>scale(d.Height))
-        .attr("x",d=>scale1(d.Name))
-        .attr("y",d=>500-scale(d.Height))
-        .attr("width",scale1.bandwidth())
+        .attr("height",scale1.bandwidth())
+        .attr("y",d=>scale1(d.Name))
+        .attr("width",d=>scale(d.Height))
         .attr("fill","blue")
         .attr("transform", "translate(50,50)")
 
-        let xaxis=d3.axisBottom(scale1)
+        let xaxis=d3.axisBottom(scale)
         body.append("g")
-        .attr("transform", "translate(50,550)")
+        .attr("transform", "translate(50,250)")
         .call(xaxis)
-        let yaxis=d3.axisLeft(scale)
+
+        let yaxis=d3.axisLeft(scale1)
         body.append("g")
         .attr("transform", "translate(50,50)")
         .call(yaxis)
         
+    }
+
+    function showdata1(data)
+    {
+        let scale=d3.scaleOrdinal()
+        .domain(data.map(d=>d.Name))
+        .range(d3.schemeCategory10)
+
+        let pie=d3.pie()
+        .value(d=>d.Height)
+
+        let arc=d3.arc()
+        .innerRadius(0)
+        .outerRadius(120)
+
+       let g= body.selectAll("arc")
+        .data(pie(data))
+        .enter()
+        .append("g")
+        .attr('transform', 'translate(150,150)')
+       
+
+       g.append("path")
+       .attr('d',arc )
+       .attr('fill',d=>{
+           return scale(d.data.Name)
+       })
+       
+       g
+       .append('text')
+       .text(d=>{
+           return d.data.Name
+       })
+       .attr("transform",d=>{
+           return "translate("+arc.centroid(d)+")"
+       })
+
     }
 </script>
 </html>
