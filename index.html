@@ -18,6 +18,13 @@
         .mainView {
             display: flex;
         }
+        .tooltip{
+            border: solid 1px black;
+            padding: 5px;
+            position: absolute;
+            display: none;
+            background-color: white;
+        }
     </style>
     <script src="d3.js"></script>
 </head>
@@ -34,6 +41,7 @@
             <svg id="Map"></svg>
         </div>
     </div>
+    <div class="tooltip">hello</div>
 </body>
 <script>
     let store={}
@@ -155,7 +163,12 @@ function drawBarsAirlinesChart(airlines, scales, config) {
        .on("mouseleave",function(d){
            drawRoutes(null)
           d3.select(this).attr("fill","#2a5599")
+          d3.select(".tooltip").style("display","none")
        })
+       .on("mousemove",function(d){
+           showtooltip([d.AirlineName,d.Count],[d3.event.clientX,d3.event.clientY])
+       })
+       
   //TODO: Add another listener, this time for mouseleave
   //TODO: In this listener, call drawRoutes(null), this will cause the function to remove all lines in the chart since there is no airline withe AirlineID == null.
   //TODO: change the fill color of the bar back to "#2a5599"
@@ -213,12 +226,16 @@ function drawBaseMap(container, countries, projection){
   let path =d3.geoPath()
              .projection(projection)
    //TODO: create a geoPath generator and set its projection to be the projection passed as parameter.
-  
+  let zoom=d3.zoom()
+  zoom.on("zoom",function(){
+    container.attr("transform", d3.event.transform)
+  })
   container.selectAll("path").data(countries)
       .enter().append("path")
       .attr("d",d=>path(d) )
       .attr("stroke", "#ccc")
       .attr("fill", "#eee")
+      
 }
 
 function drawMap(geoJeon) {
@@ -311,6 +328,14 @@ function drawRoutes(airlineID) {
     //TODO: set the opacity to 0.1
         
     //TODO: use exit function over bindedData to remove any routes that does not satisfy the filter.
+}
+function showtooltip(text,coords)
+{
+    let t=text[0]+"\nNo of Routes: "+text[1]
+   d3.select(".tooltip").text(t)
+   .style("top",(coords[1]))
+   .style("left",(coords[0]+100))
+   .style("display","block")
 }
 
 loadData().then(showData);
