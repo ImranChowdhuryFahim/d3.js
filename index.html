@@ -25,7 +25,42 @@
             display: none;
             background-color: white;
         }
+        circle {
+            fill-opacity: 1;
+        }
+
+        .lasso path {
+            stroke: rgb(80,80,80);
+            stroke-width:2px;
+        }
+
+        .lasso .drawn {
+            fill-opacity:.05 ;
+        }
+
+        .lasso .loop_close {
+            fill:none;
+            stroke-dasharray: 4,4;
+        }
+
+        .lasso .origin {
+            fill:#3399FF;
+            fill-opacity:.5;
+        }
+
+        .not_possible {
+            fill:#2a5599;
+        }
+
+        .possible {
+            fill: red;
+        }
+
+        .selected {
+            fill: yellow;
+        }
     </style>
+    <script src="./d3-lasso.min.js"></script>
     <script src="d3.js"></script>
 </head>
 
@@ -37,15 +72,44 @@
             <svg id="AirlinesChart"></svg>
         </div>
         <div>
-            <h2>Airports</h2>
-            <svg id="Map"></svg>
+            <h2>Airports</h2> 
+            <svg id="Map">
+                <g id="G"></g>
+            </svg>
         </div>
+        <div>          
+            <p>
+                <label for="nAngle" 
+                   style="display: inline-block; width: 240px; text-align: right">
+                   angle = <span id="nAngle-value">…</span>
+                </label>
+                <input type="range" min="0" max="360" id="nAngle">
+              </p>
+         </div>
+
     </div>
     <div class="tooltip">hello</div>
 </body>
 <script>
     let store={}
-  
+    let x=0
+    let y=0
+    let k=1
+    let deg=0
+    let svg=d3.select("#Map")
+    d3.select("#nAngle").on("input", function() {
+  update(+this.value);
+});
+  update(0);
+  function update(nAngle){
+    d3.select("#nAngle-value").text(nAngle);
+  d3.select("#nAngle").property("value", nAngle);
+  deg=nAngle
+  // rotate the text
+  d3.select("#G")
+  .attr("transform","translate(" + [x,y] + ")scale(" + k + ")rotate("+nAngle+",300,150)")
+    
+  }
     function loadData() {
     return Promise.all([
         d3.csv("routes.csv"),
@@ -205,18 +269,46 @@ function drawAirlinesChart(airlines) {
 function getMapConfig(){
   let width = 600;
   let height = 400;
-  let container = d3.select("#map")
+  let container=d3.select("#G")
+  let zoom = d3.zoom()
+       .scaleExtent([1, 40])
+       .translateExtent([[0,0], [width, height]])
+       .extent([[0, 0], [width, height]])
+    .on("zoom",function(){
+        zoomed(container)
+    })
+  
+
+  let containe = d3.select("#map")
                   .attr("height",height)
                   .attr("width",width)
-     //TODO: set the width and height of the conatiner to be equal the width and height variables.
+                  .call(zoom)
+
+  //let container=d3.select("#G")
+                //  .attr("transform","translate(0,0) rotate(0)")
+  
   return {width, height, container}
 }
+
+
+function zoomed(container)
+  {
+    x=d3.event.transform.x
+    y=d3.event.transform.y
+    k=d3.event.transform.k
+ 
+container.attr(
+      "transform","translate(" + [d3.event.transform.x, d3.event.transform.y] + ")scale(" + d3.event.transform.k + ")rotate("+deg+",300,150)")
+     //.attr("transform", "translate("+d3.event.transform.x+","+d3.event.transform.y+") rotate("+45+")");
+     console.log(x,y,k)
+  }
 
 function getMapProjection(config) {
   let {width, height} = config;
   let projection = d3.geoMercator()//TODO: Create a projection of type Mercator.
   projection.scale(97)
             .translate([width / 2, height / 2 + 20])
+            .rotate([0,0,0])
             
   store.mapProjection = projection;
   return projection;
@@ -226,15 +318,22 @@ function drawBaseMap(container, countries, projection){
   let path =d3.geoPath()
              .projection(projection)
    //TODO: create a geoPath generator and set its projection to be the projection passed as parameter.
-  let zoom=d3.zoom()
-  zoom.on("zoom",function(){
-    container.attr("transform", d3.event.transform)
-  })
+
   container.selectAll("path").data(countries)
       .enter().append("path")
       .attr("d",d=>path(d) )
       .attr("stroke", "#ccc")
       .attr("fill", "#eee")
+      .on("mouseenter", function(d) {
+          d3.select(this).attr("fill", "#229a5b")
+          showtooltip1(d.properties.name,[d3.event.clientX,d3.event.clientY])
+        })
+      .on("mouseleave",function(){
+        d3.select(this).attr("fill", "#eee")
+        d3.select(".tooltip").style("display","none")
+      })
+     
+      
       
 }
 
@@ -281,6 +380,8 @@ function groupByAirport(data) {
     result = Object.keys(result).map(key => result[key])
     return result
 }
+ 
+let circles=d3.select("#G").selectAll("circle")
 
 function drawAirports(airports) {
   let config = getMapConfig(); //get the config
@@ -295,6 +396,60 @@ function drawAirports(airports) {
   .attr("fill","#2a5599")
   .attr("cx",d=>projection([+d.Longitude,+d.Latitude])[0])
   .attr("cy",d=>projection([+d.Longitude,+d.Latitude])[1])
+  .on("mousemove",function(d){
+           showtooltip1(d.Airport,[d3.event.clientX,d3.event.clientY])
+       })
+   .on("mouseleave",function(){
+       d3.select(".tooltip").style("display","none")
+   })
+
+   var lasso_start = function() {
+            lasso.items() // reset size
+                .classed("not_possible",true)
+                .classed("selected",false);
+        };
+
+        var lasso_draw = function() {
+        
+            // Style the possible dots
+            lasso.possibleItems()
+                .classed("not_possible",false)
+                .classed("possible",true);
+
+            // Style the not possible dot
+            lasso.notPossibleItems()
+                .classed("not_possible",true)
+                .classed("possible",false);
+        };
+
+        var lasso_end = function() {
+            // Reset the color of all dots
+            lasso.items(container.selectAll("circle"))
+                .classed("not_possible",false)
+                .classed("possible",false);
+
+            // Style the selected dots
+            lasso.selectedItems()
+                .classed("selected",true)
+                
+
+            // Reset the style of the not selected dots
+            lasso.notSelectedItems()
+                
+
+        };
+        
+        var lasso = d3.lasso()
+            .closePathSelect(true)
+            .closePathDistance(100)
+            .items(circles)
+            .targetArea(container)
+            .on("start",lasso_start)
+            .on("draw",lasso_draw)
+            .on("end",lasso_end);
+
+        d3.select("#G").call(lasso)
+
   //TODO: bind the airports to the circles using the .data method.
   //TODO: for each new airport (hint: .enter)
   //      - Set the radius to 1
@@ -318,6 +473,7 @@ function drawRoutes(airlineID) {
     .attr("y2",d=>projection([+d.DestLongitude,+d.DestLatitude])[1])
     .attr("stroke","#992a2a")
     .attr("opacity", .1)
+    
 
     bindedData.exit().remove()
     //TODO: Use the .enter selector to append a line for each new route.
@@ -335,6 +491,14 @@ function showtooltip(text,coords)
    d3.select(".tooltip").text(t)
    .style("top",(coords[1]))
    .style("left",(coords[0]+100))
+   .style("display","block")
+}
+
+function showtooltip1(text,coords)
+{
+    d3.select(".tooltip").text(text)
+    .style("top",(coords[1]))
+   .style("left",(coords[0]+20))
    .style("display","block")
 }
 
