@@ -49,15 +49,15 @@
         }
 
         .not_possible {
-            fill:#2a5599;
+            fill:#415679;
         }
 
         .possible {
-            fill: red;
+            fill: gray;
         }
 
         .selected {
-            fill: yellow;
+            fill: darkblue;
         }
     </style>
     <script src="./d3-lasso.min.js"></script>
@@ -388,8 +388,8 @@ function drawAirports(airports) {
   let projection = getMapProjection(config) //get the projection
   let container = config.container; //get the container
         
-  let circles = container.selectAll("circle");
-  circles.data(airports)
+  let circles = container.selectAll("circle")
+  .data(airports)
   .enter()
   .append("circle")
   .attr("r",1)
@@ -424,17 +424,19 @@ function drawAirports(airports) {
 
         var lasso_end = function() {
             // Reset the color of all dots
-            lasso.items(container.selectAll("circle"))
+            lasso.items()
                 .classed("not_possible",false)
                 .classed("possible",false);
 
             // Style the selected dots
             lasso.selectedItems()
                 .classed("selected",true)
-                
+                .attr("r",1);
 
             // Reset the style of the not selected dots
             lasso.notSelectedItems()
+            .style("opacity", .2)
+
                 
 
         };
@@ -449,7 +451,7 @@ function drawAirports(airports) {
             .on("end",lasso_end);
 
         d3.select("#G").call(lasso)
-
+        lasso.items(container.selectAll('circle'))
   //TODO: bind the airports to the circles using the .data method.
   //TODO: for each new airport (hint: .enter)
   //      - Set the radius to 1
